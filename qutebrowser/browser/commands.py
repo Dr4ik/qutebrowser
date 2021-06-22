@@ -22,7 +22,7 @@
 import os.path
 import shlex
 import functools
-from typing import cast, Callable, Dict, Union
+from typing import cast, Callable, Dict, Union, List
 
 from PyQt5.QtWidgets import QApplication, QTabBar
 from PyQt5.QtCore import Qt, QUrl, QEvent, QUrlQuery
@@ -1002,6 +1002,25 @@ class CommandDispatcher:
         else:
             raise cmdutils.CommandError("There's no tab with index {}!".format(
                 index))
+
+    @cmdutils.register(instance='command-dispatcher', scope='window')
+    @cmdutils.argument('order', choices=['asc', 'desc'])
+    def tab_sort(self, order: str = 'asc') -> None:
+        tab_widget = self._tabbed_browser.widget
+
+        sorted_tabs = sorted(
+            map(
+                lambda x: (x[0], x[1], tab_widget.page_title(x[0]), tab_widget.tab_url(x[0])),
+                enumerate(self._tabbed_browser.widgets())
+            ),
+            key=lambda x: x[3],
+            reverse=order != 'desc'
+        )
+
+        for idx, tab, title, _ in sorted_tabs:
+            tab_widget.insertTab(0, tab, title)
+            tab_widget.update_tab_favicon(tab)
+
 
     @cmdutils.register(instance='command-dispatcher', scope='window')
     @cmdutils.argument('index', choices=['+', '-'])
